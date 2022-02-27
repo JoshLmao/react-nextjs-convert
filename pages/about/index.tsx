@@ -1,6 +1,5 @@
 import React from 'react';
-import './App.css';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import * as Realm from "realm-web";
 
 class About extends React.Component<{
@@ -23,12 +22,12 @@ class About extends React.Component<{
     async componentDidMount() {
         console.log("About mounted");
 
-        const realmId: any = process.env.REACT_APP_REALM_APP_ID;
+        const realmId: any = process.env.NEXT_PUBLIC_REALM_APP_ID;
         this._realmApp = new Realm.App({
             id: realmId
         });
 
-        let apiKey = process.env.REACT_APP_REALM_API_KEY;
+        let apiKey = process.env.NEXT_PUBLIC_REALM_API_KEY;
         if (!apiKey) {
             console.error(`Unable to get API key`);
             return undefined;
@@ -57,7 +56,8 @@ class About extends React.Component<{
                 This is my about page
                 <br/>
                 <Link
-                    to="/">
+                    href="/"
+                    >
                     Go home
                 </Link>
                 <br/>
