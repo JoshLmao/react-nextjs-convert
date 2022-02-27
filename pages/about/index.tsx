@@ -1,54 +1,15 @@
 import React from 'react';
 import Link from 'next/link';
 import * as Realm from "realm-web";
+import { GetServerSideProps } from 'next';
 
-class About extends React.Component<{
+type Props = {
+    id: string,
+    round: string,
+    blockTime: string,
+};
 
-}, {
-    blockInfo: any | undefined
-}> {
-
-    _realmApp: any;
-    _client: any;
-
-    constructor(props: any) {
-        super(props);
-
-        this.state = {
-            blockInfo: undefined,
-        };
-    }
-
-    async componentDidMount() {
-        console.log("About mounted");
-
-        const realmId: any = process.env.NEXT_PUBLIC_REALM_APP_ID;
-        this._realmApp = new Realm.App({
-            id: realmId
-        });
-
-        let apiKey = process.env.NEXT_PUBLIC_REALM_API_KEY;
-        if (!apiKey) {
-            console.error(`Unable to get API key`);
-            return undefined;
-        }
-
-        try {
-            const credentials = Realm.Credentials.userApiKey(apiKey);
-            await this._realmApp.logIn(credentials);
-            console.log("LOGGED IN!");
-
-            this._client = this._realmApp.currentUser.mongoClient("mongodb-atlas");
-        } catch (e) {
-            console.error(e);
-            return undefined;
-        }
-
-        const block = await this._client.db("NftExplorer-Prod8").collection("LastBlock").findOne({}); 
-        this.setState({
-            blockInfo: block,
-        });
-    }
+class About extends React.Component<Props> {
 
     render(): React.ReactNode {
         return (
@@ -63,12 +24,61 @@ class About extends React.Component<{
                 <br/>
                 <code>
                     {
-                        this.state.blockInfo !== undefined && JSON.stringify(this.state.blockInfo)
+                        this.props.id !== undefined && (
+                            <ul>
+                                <li>
+                                    { this.props.id }
+                                </li>
+                                <li>
+                                    { this.props.round }
+                                </li>
+                                <li>
+                                    { this.props.blockTime }
+                                </li>
+                            </ul>
+                        )
                     }
                 </code>
             </div>
         )
     }    
+}
+
+export const getServerSideProps: GetServerSideProps = async ({
+    params,
+    res
+}) => {
+    try {
+        const realmId: any = process.env.NEXT_PUBLIC_REALM_APP_ID;
+        const REALM_APP = new Realm.App({
+            id: realmId
+        });
+
+        let apiKey = process.env.NEXT_PUBLIC_REALM_API_KEY;
+        if (!apiKey) {
+            console.error(`Unable to get API key`);
+            return undefined;
+        }
+
+        const credentials = Realm.Credentials.userApiKey(apiKey);
+        await REALM_APP.logIn(credentials);
+
+        const client = REALM_APP.currentUser.mongoClient("mongodb-atlas");
+        const block = await client.db("NftExplorer-Prod8").collection("LastBlock").findOne({}); 
+        return {
+            props: {
+                id: block._id,
+                round:  block.round,
+                blockTime: block["block-time"],
+            }
+        };
+    } catch (e) {
+        console.error(e);
+        res.statusCode = 404;
+        return {
+            props: { }
+        };
+    }
 }
 
 export default About;
